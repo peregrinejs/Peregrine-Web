@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "esModuleInterop": true,
+    "importHelpers": true,
+    "lib": [
+      "dom",
+      "es2022"
+    ],
+    "module": "es2022",
+    "moduleResolution": "node",
+    "noEmitHelpers": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "outDir": "dist/esm",
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2022"
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}

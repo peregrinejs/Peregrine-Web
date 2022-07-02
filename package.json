@@ -1,0 +1,58 @@
+{
+  "name": "@peregrine/web",
+  "version": "0.0.1",
+  "description": "Peregrine for Web: native container for hybrid apps",
+  "main": "dist/esm/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "default": "./dist/esm/index.js"
+    }
+  },
+  "scripts": {
+    "prettier": "prettier 'src/**/*.ts'",
+    "lint": "npm run eslint && npm run prettier -- --check",
+    "fmt": "npm run eslint -- --fix && npm run prettier -- --write",
+    "eslint": "eslint src --ext .ts",
+    "rollup": "rollup --config rollup.config.ts",
+    "clean": "rimraf dist",
+    "build": "npm run clean && npm run rollup",
+    "watch": "npm run rollup -- --watch",
+    "test": "jest",
+    "prepare": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/peregrinejs/web.git"
+  },
+  "author": "Daniel Imhoff <dwieeb@gmail.com>",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/peregrinejs/web/issues"
+  },
+  "homepage": "https://github.com/peregrinejs/web#readme",
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@imhoff/eslint-config": "^2.0.0",
+    "@imhoff/prettier-config": "^1.2.0",
+    "@rollup/plugin-typescript": "^8.3.1",
+    "@types/jest": "^27.4.1",
+    "eslint": "^8.12.0",
+    "jest": "^27.5.1",
+    "prettier": "^2.6.1",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.70.1",
+    "rollup-plugin-terser": "^7.0.2",
+    "ts-jest": "^27.1.4",
+    "tslib": "^2.4.0",
+    "typescript": "^4.6.3"
+  },
+  "prettier": "@imhoff/prettier-config",
+  "eslintConfig": {
+    "extends": "@imhoff/eslint-config/recommended"
+  }
+}
