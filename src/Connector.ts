@@ -92,7 +92,7 @@ export default abstract class Connector {
       if (isDataEmpty(response.data)) {
         log.debug('⬇️ [res: %s] 🟢', response.id)
       } else {
-        log.debug('⬇️ [res: %s] (data:  %o 🟢', response.id, response.data)
+        log.debug('⬇️ [res: %s] (data: %o) 🟢', response.id, response.data)
       }
     } else {
       log.debug('⬇️ [res: %s] (error: %o) 🔴', response.id, response.error)
