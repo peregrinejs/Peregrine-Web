@@ -31,25 +31,35 @@ const ProxyClient: {
   const targetProperties = getPropertyNames(target)
 
   const createDeepProxy = (endpointPath: string): any => {
-    return new Proxy((...args: any[]) => target.invoke(endpointPath, ...args), {
-      get: (_, property) => {
-        assert(typeof property === 'string', 'property must be a string')
+    return new Proxy(
+      {},
+      {
+        apply: (_1, _2, args) => {
+          return target.invoke(endpointPath, ...args)
+        },
+        get: (_1, property) => {
+          assert(typeof property === 'string', 'property must be a string')
 
-        const endpoint = `${endpointPath}.${property}`
+          const endpoint = `${endpointPath}.${property}`
 
-        if (property.endsWith('$')) {
-          return target.get(endpoint)
-        }
+          if (property.endsWith('$')) {
+            return target.get(endpoint)
+          }
 
-        return createDeepProxy(endpoint)
+          return createDeepProxy(endpoint)
+        },
       },
-    })
+    )
   }
 
   const handler: ProxyHandler<_ProxyClient<T>> = {
     get: (_, property) => {
       if (targetProperties.includes(property) || typeof property === 'symbol') {
         return target[property as keyof typeof target]
+      }
+
+      if (property.endsWith('$')) {
+        return target.get(property)
       }
 
       return createDeepProxy(property)
