@@ -2,13 +2,13 @@
   "name": "@peregrine/web",
   "version": "0.0.2",
   "description": "Peregrine for Web: native container for hybrid apps",
-  "main": "dist/esm/index.js",
-  "module": "dist/esm/index.js",
-  "types": "dist/esm/index.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "src/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/esm/index.d.ts",
-      "default": "./dist/esm/index.js"
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
     }
   },
   "scripts": {
@@ -34,6 +34,7 @@
   },
   "homepage": "https://github.com/peregrinejs/web#readme",
   "files": [
+    "src",
     "dist"
   ],
   "devDependencies": {

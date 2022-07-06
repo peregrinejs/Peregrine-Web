@@ -6,7 +6,7 @@ export default defineConfig({
   input: 'src/index.ts',
   output: [
     {
-      dir: 'dist/esm',
+      dir: 'dist',
       format: 'es',
       sourcemap: true,
     },
@@ -19,7 +19,7 @@ export default defineConfig({
     },
   ],
   plugins: [
-    typescript(),
+    typescript({ tsconfig: 'tsconfig.json' }),
     terser({
       compress: false,
       mangle: false,
