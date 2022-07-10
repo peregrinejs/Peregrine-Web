@@ -1,6 +1,6 @@
 {
   "name": "@peregrine/web",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Peregrine for Web: native container for hybrid apps",
   "main": "dist/index.js",
   "module": "dist/index.js",
