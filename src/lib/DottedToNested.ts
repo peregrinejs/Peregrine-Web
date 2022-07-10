@@ -15,8 +15,8 @@
 
 import type UnionToIntersection from './UnionToIntersection'
 
-type DottedHead<T> = T extends `${infer P1}.${infer _}` ? P1 : T
-type DottedTail<T> = T extends `${infer _}.${infer PX}` ? PX : ''
+type DottedHead<T> = T extends `${infer P1}.${infer _}` ? P1 : T // eslint-disable-line @typescript-eslint/no-unused-vars
+type DottedTail<T> = T extends `${infer _}.${infer PX}` ? PX : '' // eslint-disable-line @typescript-eslint/no-unused-vars
 
 type RecurseDottedToNestedUnion<
   T,

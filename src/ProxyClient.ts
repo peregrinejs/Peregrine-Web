@@ -30,7 +30,9 @@ const ProxyClient: {
   const targetProperties = getPropertyNames(target)
 
   const createDeepProxy = (basePath: string): any => {
-    const endpoint = function () {}
+    const endpoint = function () {
+      // hijacked by proxy handler's apply
+    }
 
     Object.defineProperty(endpoint.constructor, 'name', {
       value: basePath,
@@ -41,7 +43,7 @@ const ProxyClient: {
 
     const handler: ProxyHandler<object> = {
       apply: (_1, _2, args) => target.invoke(basePath, ...args),
-      has: (_1, _2) => true,
+      has: () => true,
       get: (_1, property) => {
         if (endpointProperties.has(property) || typeof property === 'symbol') {
           return endpoint[property as keyof typeof endpoint]
