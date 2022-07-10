@@ -13,12 +13,15 @@
 // You should have received a copy of the GNU General Public License version 3
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-export default function getPropertyNames(obj: any): (string | symbol)[] {
-  const names: (string | symbol)[] = []
+export default function getPropertyNames(obj: any): Set<string | symbol> {
+  const names: Set<string | symbol> = new Set()
   let proto = obj
 
   while (proto !== null) {
-    names.push(...Object.getOwnPropertyNames(proto))
+    for (const prop of Object.getOwnPropertyNames(proto)) {
+      names.add(prop)
+    }
+
     proto = Object.getPrototypeOf(proto)
   }
 

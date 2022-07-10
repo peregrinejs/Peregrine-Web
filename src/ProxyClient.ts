@@ -16,7 +16,6 @@
 import type { RemoteInterface } from './StringClient'
 import StringClient from './StringClient'
 import type DottedToNested from './lib/DottedToNested'
-import assert from './lib/assert'
 import getPropertyNames from './lib/getPropertyNames'
 
 class _ProxyClient<T extends RemoteInterface> extends StringClient<T> {}
@@ -30,31 +29,40 @@ const ProxyClient: {
   const target = new _ProxyClient<T>()
   const targetProperties = getPropertyNames(target)
 
-  const createDeepProxy = (endpointPath: string): any => {
-    return new Proxy(
-      {},
-      {
-        apply: (_1, _2, args) => {
-          return target.invoke(endpointPath, ...args)
-        },
-        get: (_1, property) => {
-          assert(typeof property === 'string', 'property must be a string')
+  const createDeepProxy = (basePath: string): any => {
+    const endpoint = function () {}
 
-          const endpoint = `${endpointPath}.${property}`
+    Object.defineProperty(endpoint.constructor, 'name', {
+      value: basePath,
+      writable: false,
+    })
 
-          if (property.endsWith('$')) {
-            return target.get(endpoint)
-          }
+    const endpointProperties = getPropertyNames(endpoint)
 
-          return createDeepProxy(endpoint)
-        },
+    const handler: ProxyHandler<object> = {
+      apply: (_1, _2, args) => target.invoke(basePath, ...args),
+      has: (_1, _2) => true,
+      get: (_1, property) => {
+        if (endpointProperties.has(property) || typeof property === 'symbol') {
+          return endpoint[property as keyof typeof endpoint]
+        }
+
+        const endpointPath = `${basePath}.${property}`
+
+        if (property.endsWith('$')) {
+          return target.get(endpointPath)
+        }
+
+        return createDeepProxy(endpointPath)
       },
-    )
+    }
+
+    return new Proxy(endpoint, handler)
   }
 
   const handler: ProxyHandler<_ProxyClient<T>> = {
     get: (_, property) => {
-      if (targetProperties.includes(property) || typeof property === 'symbol') {
+      if (targetProperties.has(property) || typeof property === 'symbol') {
         return target[property as keyof typeof target]
       }
 
