@@ -1,0 +1,4 @@
+.github
+__tests__
+/*.config.*
+/tsconfig.json
