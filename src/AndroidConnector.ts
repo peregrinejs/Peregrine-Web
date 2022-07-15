@@ -14,30 +14,29 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import AndroidConnection from './AndroidConnection'
-import Connector from './Connector'
+import type { BaseConnectorConfig } from './BaseConnector'
+import BaseConnector from './BaseConnector'
 import { isRemoteFunctionResponse } from './RemoteFunctionResponse'
 
-export interface AndroidConnectorConfig {
-  rpcURL?: URL
-  userURL?: URL
+export interface AndroidConnectorConfig extends BaseConnectorConfig {
+  readonly rpcURL?: URL
+  readonly userURL?: URL
 }
 
-export default class AndroidConnector extends Connector {
-  protected readonly config: Required<Readonly<AndroidConnectorConfig>>
+export default class AndroidConnector extends BaseConnector {
+  protected readonly rpcURL: URL
+  protected readonly userURL: URL
 
-  constructor(config: Readonly<AndroidConnectorConfig> = {}) {
-    super()
-    this.config = {
-      rpcURL: new URL('https://peregrine/__rpc__/'),
-      userURL: new URL('https://peregrine/__user__/'),
-      ...config,
-    }
+  constructor(config: Readonly<AndroidConnectorConfig>) {
+    super(config)
+    this.rpcURL = config.rpcURL ?? new URL('https://peregrine/__rpc__/')
+    this.userURL = config.userURL ?? new URL('https://peregrine/__user__/')
   }
 
-  createConnection(context: Window): AndroidConnection {
+  createConnection(): AndroidConnection {
     return new AndroidConnection({
-      rpcURL: this.config.rpcURL,
-      context,
+      rpcURL: this.rpcURL,
+      context: this.context,
       onReceive: data => {
         if (isRemoteFunctionResponse(data)) {
           this.handleRemoteFunctionResponse(data)
@@ -49,6 +48,6 @@ export default class AndroidConnector extends Connector {
   }
 
   async url(path: string): Promise<URL> {
-    return new URL(path, this.config.userURL)
+    return new URL(path, this.userURL)
   }
 }

@@ -13,70 +13,61 @@
 // You should have received a copy of the GNU General Public License version 3
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+import { ErrorMessages } from './Client'
 import type { RemoteInterface } from './StringClient'
 import StringClient from './StringClient'
 import type DottedToNested from './lib/DottedToNested'
+import assert from './lib/assert'
 import getPropertyNames from './lib/getPropertyNames'
+import isNonNull from './lib/isNonNull'
 
-class _ProxyClient<T extends RemoteInterface> extends StringClient<T> {}
+class ProxyClient<T extends RemoteInterface> extends StringClient<T> {
+  /** @internal */
+  readonly _proxyCache: Map<string, any> = new Map()
+}
 
 type Endpoint = ((...args: any[]) => any) | AsyncGenerator<any>
 
-const ProxyClient: {
-  new <T extends RemoteInterface>(): DottedToNested<T, Endpoint> &
-    _ProxyClient<T>
-} = function <T extends RemoteInterface>() {
-  const target = new _ProxyClient<T>()
+const createProxy = (client: ProxyClient<any>, basePath?: string) => {
+  const target = basePath ? client.get(basePath) : client
   const targetProperties = getPropertyNames(target)
 
-  const createDeepProxy = (basePath: string): any => {
-    const endpoint = function () {
-      // hijacked by proxy handler's apply
-    }
-
-    Object.defineProperty(endpoint.constructor, 'name', {
-      value: basePath,
-      writable: false,
-    })
-
-    const endpointProperties = getPropertyNames(endpoint)
-
-    const handler: ProxyHandler<object> = {
-      apply: (_1, _2, args) => target.invoke(basePath, ...args),
-      has: () => true,
-      get: (_1, property) => {
-        if (endpointProperties.has(property) || typeof property === 'symbol') {
-          return endpoint[property as keyof typeof endpoint]
-        }
-
-        const endpointPath = `${basePath}.${property}`
-
-        if (property.endsWith('$')) {
-          return target.get(endpointPath)
-        }
-
-        return createDeepProxy(endpointPath)
-      },
-    }
-
-    return new Proxy(endpoint, handler)
-  }
-
-  const handler: ProxyHandler<_ProxyClient<T>> = {
+  const handler: ProxyHandler<ProxyClient<any>> = {
+    apply: (_1, _2, args) => {
+      assert(isNonNull(basePath), ErrorMessages.BAD_INVOCATION)
+      return client.invoke(basePath, ...args)
+    },
     get: (_, property) => {
       if (targetProperties.has(property) || typeof property === 'symbol') {
         return target[property as keyof typeof target]
       }
 
+      const endpointPath = basePath ? `${basePath}.${property}` : property
+
       if (property.endsWith('$')) {
-        return target.get(property)
+        return client.get(endpointPath)
       }
 
-      return createDeepProxy(property)
+      let proxy = client._proxyCache.get(endpointPath)
+
+      if (!proxy) {
+        proxy = createProxy(client, endpointPath)
+        client._proxyCache.set(endpointPath, proxy)
+      }
+
+      return proxy
     },
   }
 
   return new Proxy(target, handler)
-} as any
+}
 
-export default ProxyClient
+const _ProxyClient: {
+  new <T extends RemoteInterface>(
+    ...args: ConstructorParameters<typeof ProxyClient>
+  ): DottedToNested<T, Endpoint> & ProxyClient<T>
+} = new Proxy(ProxyClient, {
+  construct: (target, args) => createProxy(new target(...args)),
+}) as any
+
+export default _ProxyClient

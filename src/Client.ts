@@ -15,6 +15,7 @@
 
 export const ErrorMessages = {
   NOT_CONNECTED: 'Client is not connected.',
+  BAD_ENDPOINT_NAME: 'Endpoint name is invalid.',
   BAD_INVOCATION: 'Bad remote function invocation.',
   UNKNOWN_PLATFORM: 'Unknown platform.',
 }
@@ -30,7 +31,7 @@ export default interface Client {
    *
    * @returns - A promise that resolves when the client has connected.
    */
-  connect(context: Window): Promise<void>
+  connect(context?: Window): Promise<void>
 
   /**
    * Disconnect this client from the global JS context and native context.

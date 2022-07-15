@@ -13,21 +13,30 @@
 // You should have received a copy of the GNU General Public License version 3
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-export type Resolve<T> = (value: T | PromiseLike<T>) => void
-export type Reject = (reason?: any) => void
+export type PromiseState = 'pending' | 'fulfilled' | 'rejected'
 
 export default class Deferred<T> {
-  resolve!: Resolve<T>
-  reject!: Reject
+  private _resolve!: (value: T | PromiseLike<T>) => void
+  private _reject!: (reason?: any) => void
 
-  readonly promise: Promise<T>
+  readonly promise: Promise<T> = new Promise((resolve, reject) => {
+    this._resolve = resolve
+    this._reject = reject
+  })
 
-  constructor() {
-    this.promise = new Promise(this.executor)
+  state: PromiseState = 'pending'
+
+  resolve(value: T | PromiseLike<T>): void {
+    if (this.state === 'pending') {
+      this.state = 'fulfilled'
+      this._resolve(value)
+    }
   }
 
-  private executor = (resolve: Resolve<T>, reject: Reject) => {
-    this.resolve = resolve
-    this.reject = reject
+  reject(reason?: any): void {
+    if (this.state === 'pending') {
+      this.state = 'rejected'
+      this._reject(reason)
+    }
   }
 }

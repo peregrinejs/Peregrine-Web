@@ -13,31 +13,30 @@
 // You should have received a copy of the GNU General Public License version 3
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import Connector from './Connector'
+import type { BaseConnectorConfig } from './BaseConnector'
+import BaseConnector from './BaseConnector'
 import { isRemoteFunctionResponse } from './RemoteFunctionResponse'
 import iOSConnection from './iOSConnection'
 
-export interface iOSConnectorConfig {
-  rpcURL?: URL
-  userURL?: URL
+export interface iOSConnectorConfig extends BaseConnectorConfig {
+  readonly rpcURL?: URL
+  readonly userURL?: URL
 }
 
-export default class iOSConnector extends Connector {
-  protected readonly config: Required<Readonly<iOSConnectorConfig>>
+export default class iOSConnector extends BaseConnector {
+  protected readonly rpcURL: URL
+  protected readonly userURL: URL
 
-  constructor(config: Readonly<iOSConnectorConfig> = {}) {
-    super()
-    this.config = {
-      rpcURL: new URL('peregrine:///__rpc__/'),
-      userURL: new URL('peregrine:///__user__/'),
-      ...config,
-    }
+  constructor(config: Readonly<iOSConnectorConfig>) {
+    super(config)
+    this.rpcURL = config.rpcURL ?? new URL('peregrine:///__rpc__/')
+    this.userURL = config.userURL ?? new URL('peregrine:///__user__/')
   }
 
-  createConnection(context: Window): iOSConnection {
+  createConnection(): iOSConnection {
     return new iOSConnection({
-      rpcURL: this.config.rpcURL,
-      context,
+      rpcURL: this.rpcURL,
+      context: this.context,
       onReceive: data => {
         if (isRemoteFunctionResponse(data)) {
           this.handleRemoteFunctionResponse(data)
@@ -49,6 +48,6 @@ export default class iOSConnector extends Connector {
   }
 
   async url(path: string): Promise<URL> {
-    return new URL(path, this.config.userURL)
+    return new URL(path, this.userURL)
   }
 }

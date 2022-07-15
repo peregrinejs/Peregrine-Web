@@ -22,6 +22,7 @@ import type RemoteObservableEvent from './RemoteObservableEvent'
 import AsyncIterableSubject from './lib/AsyncIterableSubject'
 import Deferred from './lib/Deferred'
 import assert from './lib/assert'
+import generateId from './lib/generateId'
 import isNonNull from './lib/isNonNull'
 import platform from './lib/platform'
 
@@ -29,26 +30,44 @@ export type RemoteFunction<I, O> = (arg: I) => Promise<O>
 export type RemoteObservable<T> = AsyncGenerator<T>
 export type RemoteInterface = Record<
   string,
-  RemoteFunction<any, any> | AsyncGenerator<any>
+  RemoteFunction<any, any> | RemoteObservable<any>
 >
 
 export type RemoteFunctions<T extends RemoteInterface> = {
   [K in keyof T]: T[K] extends RemoteFunction<any, any> ? T[K] : never
 }
 
+export interface StringClientConfig {
+  readonly connector?: Connector
+  readonly events?: AsyncIterableSubject<RemoteObservableEvent>
+}
+
 export default class StringClient<T extends RemoteInterface> implements Client {
-  private _connector: Deferred<Connector> | null = null
-  private _events: AsyncIterableSubject<RemoteObservableEvent> =
-    new AsyncIterableSubject()
-  private _endpointCache: Map<
+  private readonly _options: StringClientConfig
+
+  private readonly _functionCache: Map<
     string,
-    RemoteFunction<unknown, unknown> | RemoteObservable<unknown>
+    RemoteFunction<unknown, unknown>
   > = new Map()
 
-  async connect(context: Window): Promise<void> {
+  private readonly _observableCache: Map<string, AsyncIterableSubject<any>[]> =
+    new Map()
+
+  private _connector: Deferred<Connector> | null = null
+  private _context: Window | null = null
+  private _events: AsyncIterableSubject<RemoteObservableEvent>
+
+  constructor(config: StringClientConfig = {}) {
+    this._options = config
+    this._events = config.events ?? new AsyncIterableSubject()
+    this._subscribeToEvents()
+  }
+
+  async connect(context?: Window): Promise<void> {
     this._connector = new Deferred()
+    this._context = context ?? null
     const connector = await this._loadConnector()
-    await connector.connect(context, this._events)
+    await connector.connect()
     this._connector.resolve(connector)
   }
 
@@ -57,6 +76,7 @@ export default class StringClient<T extends RemoteInterface> implements Client {
     const connector = await this._connector.promise
     await connector.disconnect()
     this._connector = null
+    this._context = null
   }
 
   async url(path: string): Promise<URL> {
@@ -69,32 +89,33 @@ export default class StringClient<T extends RemoteInterface> implements Client {
    * Get a remote interface endpoint by name.
    *
    * This will return a handle to either a remote function or remote
-   * observable. Subsequent calls with the same name will return the same
-   * reference.
+   * observable.
    *
    * @param name - The name of the remote function or observable.
    */
   get<N extends keyof T>(name: N): T[N] {
     assert(typeof name === 'string', ErrorMessages.BAD_ENDPOINT_NAME)
 
-    let endpoint = this._endpointCache.get(name)
+    if (name.endsWith('$')) {
+      const observables = this._observableCache.get(name) ?? []
+      const ob = new AsyncIterableSubject()
+      const iterator = ob[Symbol.asyncIterator]()
 
-    if (!endpoint) {
-      if (name.endsWith('$')) {
-        const { _events } = this
-        endpoint = (async function* () {
-          for await (const event of _events) {
-            if (name === event.observable) {
-              yield event.data
-            }
-          }
-        })()
-      } else {
-        endpoint = async data => {
+      this._observableCache.set(name, [ob, ...observables])
+
+      return iterator as T[N]
+    } else {
+      let fn = this._functionCache.get(name)
+
+      if (!fn) {
+        fn = async data => {
           assert(isNonNull(this._connector), ErrorMessages.NOT_CONNECTED)
           const connector = await this._connector.promise
-          // FIXME: `data` should be validated
-          const response = await connector.invoke(name, data as Data)
+          const response = await connector.invoke({
+            id: generateId(),
+            function: name,
+            data: data as Data, // FIXME: `data` should be validated
+          })
 
           if (response.status === 'error') {
             throw ClientError.fromRemoteFunctionError(response.error)
@@ -102,12 +123,12 @@ export default class StringClient<T extends RemoteInterface> implements Client {
 
           return response.data
         }
+
+        this._functionCache.set(name, fn)
       }
 
-      this._endpointCache.set(name, endpoint)
+      return fn as T[N]
     }
-
-    return endpoint as T[N]
   }
 
   /**
@@ -125,16 +146,35 @@ export default class StringClient<T extends RemoteInterface> implements Client {
     return fn(arg) as ReturnType<RemoteFunctions<T>[N]>
   }
 
+  private async _subscribeToEvents(): Promise<void> {
+    for await (const event of this._events) {
+      const observables = this._observableCache.get(event.observable) ?? []
 
+      for (const ob of observables) {
+        ob.next(event.data)
+      }
+    }
   }
 
   private async _loadConnector(): Promise<Connector> {
+    if (this._options.connector) {
+      return this._options.connector
+    }
+
+    assert(isNonNull(this._context), ErrorMessages.NOT_CONNECTED)
+
     if (platform === 'android') {
       const { default: AndroidConnector } = await import('./AndroidConnector')
-      return new AndroidConnector()
+      return new AndroidConnector({
+        context: this._context,
+        events: this._events,
+      })
     } else if (platform === 'ios') {
       const { default: iOSConnector } = await import('./iOSConnector')
-      return new iOSConnector()
+      return new iOSConnector({
+        context: this._context,
+        events: this._events,
+      })
     }
 
     throw new Error(ErrorMessages.UNKNOWN_PLATFORM)
