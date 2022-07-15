@@ -13,7 +13,6 @@
 // You should have received a copy of the GNU General Public License version 3
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import type AsyncIterableSubject from './AsyncIterableSubject'
 import { ErrorMessages } from './Client'
 import type Connection from './Connection'
 import type Data from './Data'
@@ -21,6 +20,7 @@ import { isDataEmpty } from './Data'
 import type RemoteFunctionRequest from './RemoteFunctionRequest'
 import type RemoteFunctionResponse from './RemoteFunctionResponse'
 import type RemoteObservableEvent from './RemoteObservableEvent'
+import type AsyncIterableSubject from './lib/AsyncIterableSubject'
 import Deferred from './lib/Deferred'
 import generateId from './lib/generateId'
 import { log } from './lib/log'

@@ -13,13 +13,13 @@
 // You should have received a copy of the GNU General Public License version 3
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import AsyncIterableSubject from './AsyncIterableSubject'
 import type Client from './Client'
 import { ErrorMessages } from './Client'
 import ClientError from './ClientError'
 import type Connector from './Connector'
 import type Data from './Data'
 import type RemoteObservableEvent from './RemoteObservableEvent'
+import AsyncIterableSubject from './lib/AsyncIterableSubject'
 import Deferred from './lib/Deferred'
 import assert from './lib/assert'
 import isNonNull from './lib/isNonNull'
