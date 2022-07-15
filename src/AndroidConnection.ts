@@ -17,6 +17,8 @@ import { ErrorMessages } from './Client'
 import type { ReceivableData, SendableData } from './Connection'
 import type Connection from './Connection'
 import Deferred from './lib/Deferred'
+import assert from './lib/assert'
+import isNonNull from './lib/isNonNull'
 import { log } from './lib/log'
 
 export interface AndroidConnectionOptions {
@@ -56,13 +58,8 @@ export default class AndroidConnection implements Connection {
     const response = await this.context.fetch(subscribeURL.toString())
 
     log.debug('Initiating subscription...')
-
-    if (!response.ok) {
-      throw new Error('Error occurred while subscribing.')
-    }
-
+    assert(response.ok, 'Error occurred while subscribing.')
     await connected.promise
-
     log.debug('Connection established!')
   }
 
@@ -82,13 +79,11 @@ export default class AndroidConnection implements Connection {
   }
 
   send(data: SendableData): void {
-    if (!this.port) {
-      throw new Error(ErrorMessages.NOT_CONNECTED)
-    }
-
-    if (data instanceof ArrayBuffer) {
-      throw new Error('Binary data is not supported on Android.')
-    }
+    assert(isNonNull(this.port), ErrorMessages.NOT_CONNECTED)
+    assert(
+      !(data.data instanceof ArrayBuffer),
+      'Binary data is not supported on Android.',
+    )
 
     this.port.postMessage(JSON.stringify(data))
   }

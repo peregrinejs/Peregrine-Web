@@ -75,18 +75,16 @@ export default class StringClient<T extends RemoteInterface> implements Client {
    * @param name - The name of the remote function or observable.
    */
   get<N extends keyof T>(name: N): T[N] {
-    // FIXME: Using `keyof` makes `name` a string, number, or symbol despite
-    // specifying a constraint in `RemoteInterface`.
-    const _name = name as string
+    assert(typeof name === 'string', ErrorMessages.BAD_ENDPOINT_NAME)
 
-    let endpoint = this._endpointCache.get(_name)
+    let endpoint = this._endpointCache.get(name)
 
     if (!endpoint) {
-      if (_name.endsWith('$')) {
+      if (name.endsWith('$')) {
         const { _events } = this
         endpoint = (async function* () {
           for await (const event of _events) {
-            if (_name === event.observable) {
+            if (name === event.observable) {
               yield event.data
             }
           }
@@ -96,7 +94,7 @@ export default class StringClient<T extends RemoteInterface> implements Client {
           assert(isNonNull(this._connector), ErrorMessages.NOT_CONNECTED)
           const connector = await this._connector.promise
           // FIXME: `data` should be validated
-          const response = await connector.invoke(_name, data as Data)
+          const response = await connector.invoke(name, data as Data)
 
           if (response.status === 'error') {
             throw ClientError.fromRemoteFunctionError(response.error)
@@ -106,7 +104,7 @@ export default class StringClient<T extends RemoteInterface> implements Client {
         }
       }
 
-      this._endpointCache.set(_name, endpoint)
+      this._endpointCache.set(name, endpoint)
     }
 
     return endpoint as T[N]
@@ -123,12 +121,11 @@ export default class StringClient<T extends RemoteInterface> implements Client {
     arg?: Parameters<RemoteFunctions<T>[N]>[0],
   ): ReturnType<RemoteFunctions<T>[N]> {
     const fn = this.get(name)
-
-    if (typeof fn !== 'function') {
-      throw new Error(ErrorMessages.BAD_INVOCATION)
-    }
-
+    assert(typeof fn === 'function', ErrorMessages.BAD_INVOCATION)
     return fn(arg) as ReturnType<RemoteFunctions<T>[N]>
+  }
+
+
   }
 
   private async _loadConnector(): Promise<Connector> {

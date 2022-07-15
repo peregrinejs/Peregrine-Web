@@ -19,6 +19,8 @@ import type Connection from './Connection'
 import type Data from './Data'
 import type RemoteFunctionRequest from './RemoteFunctionRequest'
 import Deferred from './lib/Deferred'
+import assert from './lib/assert'
+import isNonNull from './lib/isNonNull'
 import { log } from './lib/log'
 
 export interface iOSConnectionOptions {
@@ -85,10 +87,7 @@ export default class iOSConnection implements Connection {
   }
 
   send(data: SendableData): void {
-    if (!this.source) {
-      throw new Error(ErrorMessages.NOT_CONNECTED)
-    }
-
+    assert(isNonNull(this.source), ErrorMessages.NOT_CONNECTED)
     this.sendRemoteFunctionRequest(data)
   }
 
