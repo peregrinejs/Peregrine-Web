@@ -25,15 +25,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/peregrinejs/web.git"
+    "url": "git+https://github.com/peregrinejs/Peregrine-Web.git"
   },
   "author": "Daniel Imhoff <dwieeb@gmail.com>",
   "license": "MIT",
   "packageManager": "pnpm@7",
   "bugs": {
-    "url": "https://github.com/peregrinejs/web/issues"
+    "url": "https://github.com/peregrinejs/Peregrine-Web/issues"
   },
-  "homepage": "https://github.com/peregrinejs/web#readme",
+  "homepage": "https://github.com/peregrinejs/Peregrine-Web#readme",
   "devDependencies": {
     "@imhoff/eslint-config": "2.0.0",
     "@imhoff/prettier-config": "^1.2.0",
