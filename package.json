@@ -13,15 +13,15 @@
   },
   "scripts": {
     "prettier": "prettier 'src/**/*.ts'",
-    "lint": "npm run eslint && npm run prettier -- --check",
-    "fmt": "npm run eslint -- --fix && npm run prettier -- --write",
+    "lint": "pnpm run eslint && pnpm run prettier --check",
+    "fmt": "pnpm run eslint --fix && pnpm run prettier --write",
     "eslint": "eslint src --ext .ts",
     "rollup": "rollup --config rollup.config.ts",
     "clean": "rimraf dist",
-    "build": "npm run clean && npm run rollup",
-    "watch": "npm run rollup -- --watch",
+    "build": "pnpm run clean && pnpm run rollup",
+    "watch": "pnpm run rollup --watch",
     "test": "jest",
-    "prepare": "npm run build"
+    "prepare": "pnpm run build"
   },
   "repository": {
     "type": "git",
@@ -29,12 +29,13 @@
   },
   "author": "Daniel Imhoff <dwieeb@gmail.com>",
   "license": "GPL-3.0",
+  "packageManager": "pnpm@7",
   "bugs": {
     "url": "https://github.com/peregrinejs/web/issues"
   },
   "homepage": "https://github.com/peregrinejs/web#readme",
   "devDependencies": {
-    "@imhoff/eslint-config": "^2.0.0",
+    "@imhoff/eslint-config": "2.0.0",
     "@imhoff/prettier-config": "^1.2.0",
     "@rollup/plugin-typescript": "^8.3.1",
     "@types/jest": "^27.4.1",
