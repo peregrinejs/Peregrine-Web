@@ -28,7 +28,7 @@
     "url": "git+https://github.com/peregrinejs/web.git"
   },
   "author": "Daniel Imhoff <dwieeb@gmail.com>",
-  "license": "GPL-3.0",
+  "license": "MIT",
   "packageManager": "pnpm@7",
   "bugs": {
     "url": "https://github.com/peregrinejs/web/issues"
