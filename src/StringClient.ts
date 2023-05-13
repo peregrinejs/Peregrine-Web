@@ -12,7 +12,7 @@ import isNonNull from './lib/isNonNull'
 import platform from './lib/platform'
 
 export type RemoteFunction<I, O> = (arg: I) => Promise<O>
-export type RemoteObservable<T> = AsyncGenerator<T>
+export type RemoteObservable<T> = AsyncIterable<T>
 export type RemoteInterface = Record<
   string,
   RemoteFunction<any, any> | RemoteObservable<any>
@@ -84,11 +84,10 @@ export default class StringClient<T extends RemoteInterface> implements Client {
     if (name.endsWith('$')) {
       const observables = this._observableCache.get(name) ?? []
       const ob = new AsyncIterableSubject()
-      const iterator = ob[Symbol.asyncIterator]()
 
       this._observableCache.set(name, [ob, ...observables])
 
-      return iterator as T[N]
+      return ob as unknown as T[N]
     } else {
       let fn = this._functionCache.get(name)
 

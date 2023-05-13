@@ -11,7 +11,7 @@ class ProxyClient<T extends RemoteInterface> extends StringClient<T> {
   readonly _proxyCache: Map<string, any> = new Map()
 }
 
-type Endpoint = ((...args: any[]) => any) | AsyncGenerator<any>
+type Endpoint = ((...args: any[]) => any) | AsyncIterator<any>
 
 const createProxy = (client: ProxyClient<any>, basePath?: string) => {
   const target = basePath ? client.get(basePath) : client

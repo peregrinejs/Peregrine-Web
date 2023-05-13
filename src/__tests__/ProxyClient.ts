@@ -1,3 +1,5 @@
+import { from } from 'rxjs'
+
 import LocalConnector from '../LocalConnector'
 import ProxyClient from '../ProxyClient'
 import type RemoteObservableEvent from '../RemoteObservableEvent'
@@ -7,9 +9,9 @@ import wait from '../lib/wait'
 type ConnectorInterface = {
   'fn1': () => Promise<void>
   'fn2': (data: string) => Promise<string>
-  'evt1$': () => AsyncGenerator
+  'evt1$': () => AsyncGenerator<number>
   'nested.fn': (data: string) => Promise<string>
-  'nested.evt$': () => AsyncGenerator
+  'nested.evt$': () => AsyncGenerator<number>
 }
 
 const createClient = (interfaceOverrides: Partial<ConnectorInterface> = {}) => {
@@ -33,8 +35,12 @@ const createClient = (interfaceOverrides: Partial<ConnectorInterface> = {}) => {
   })
 
   return new ProxyClient<{
-    [K in keyof ConnectorInterface]: ConnectorInterface[K] extends () => AsyncGenerator
-      ? AsyncGenerator
+    [K in keyof ConnectorInterface]: ConnectorInterface[K] extends () => AsyncGenerator<
+      infer T,
+      infer TReturn,
+      infer TNext
+    >
+      ? AsyncGenerator<T, TReturn, TNext>
       : ConnectorInterface[K]
   }>({ connector, events })
 }
@@ -247,5 +253,97 @@ it('should handle multiple iterations of and multiple values from an observable'
     subscribe()
     subscribe()
     subscribe()
+  })
+})
+
+it('should handle multiple values from an rxjs observable', done => {
+  const client = createClient({
+    evt1$: async function* () {
+      await wait(1)
+      yield 1
+      await wait(1)
+      yield 2
+      await wait(1)
+      yield 3
+    },
+  })
+
+  client.connect().then(() => {
+    const observable$ = from(client.evt1$)
+
+    let iterations = 0
+
+    observable$.subscribe(value => {
+      expect(value).toEqual(++iterations)
+
+      if (iterations === 3) {
+        done()
+      }
+    })
+  })
+})
+
+it('should handle multiple iterations of and multiple values from an rxjs observable', done => {
+  let assertions = 0
+
+  const client = createClient({
+    evt1$: async function* () {
+      await wait(1)
+      yield 1
+      await wait(1)
+      yield 2
+      await wait(1)
+      yield 3
+    },
+  })
+
+  client.connect().then(() => {
+    const iterate = () => {
+      const observable$ = from(client.evt1$)
+
+      let iterations = 0
+
+      observable$.subscribe(value => {
+        expect(value).toEqual(++iterations)
+
+        if (++assertions === 9) {
+          done()
+        }
+      })
+    }
+
+    iterate()
+    iterate()
+    iterate()
+  })
+})
+
+it('should allow unsubscribing from an rxjs observable', done => {
+  expect.assertions(2)
+
+  const client = createClient({
+    evt1$: async function* () {
+      await wait(1)
+      yield 1
+      await wait(1)
+      yield 2
+      await wait(1)
+      yield 3
+    },
+  })
+
+  client.connect().then(() => {
+    const observable$ = from(client.evt1$)
+
+    let iterations = 0
+
+    const subscription = observable$.subscribe(value => {
+      expect(value).toEqual(++iterations)
+
+      if (iterations === 2) {
+        subscription.unsubscribe()
+        done()
+      }
+    })
   })
 })

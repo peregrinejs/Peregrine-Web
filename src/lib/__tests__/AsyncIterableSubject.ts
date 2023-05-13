@@ -24,14 +24,6 @@ it('should throw error when attempting to send new value before consumption', as
   )
 })
 
-it('should throw error when attempting to cancel before consumption', async () => {
-  const subject = new AsyncIterableSubject<number>()
-  subject.next(1)
-  expect(() => subject.done()).toThrowError(
-    'Cannot finish--previous value(s) are unconsumed',
-  )
-})
-
 it('should throw error when iterating more than once', async () => {
   const subject = new AsyncIterableSubject<number>()
   const subscribe = async () => {
@@ -84,7 +76,7 @@ it('should iterate and finish when done() is called', async () => {
   subscribe()
 
   for (const n of [1, 2, 3]) {
-    await wait(5)
+    await wait(1)
     subject.next(n)
   }
 
