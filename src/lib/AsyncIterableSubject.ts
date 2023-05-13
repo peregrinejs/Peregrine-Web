@@ -30,8 +30,9 @@ export default class AsyncIterableSubject<T> implements AsyncIterable<T> {
 
     while (true) {
       try {
-        yield await this._deferred.promise
+        const result = await this._deferred.promise
         this._deferred = new Deferred()
+        yield result
       } catch {
         return
       }

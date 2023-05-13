@@ -2,6 +2,7 @@ import LocalConnector from '../LocalConnector'
 import ProxyClient from '../ProxyClient'
 import type RemoteObservableEvent from '../RemoteObservableEvent'
 import AsyncIterableSubject from '../lib/AsyncIterableSubject'
+import wait from '../lib/wait'
 
 type ConnectorInterface = {
   'fn1': () => Promise<void>
@@ -123,50 +124,47 @@ it('should proxy nested function calls to the connector', async () => {
   expect(result).toBe('pong')
 })
 
-it('should proxy observables to the connector', async () => {
-  expect.assertions(1)
-
+it('should proxy observables to the connector', done => {
   const client = createClient({
     evt1$: async function* () {
+      await wait(1)
       yield 1
     },
   })
 
-  await client.connect()
-
-  const subscribe = async () => {
-    for await (const event of client.evt1$) {
-      expect(event).toEqual(1)
+  client.connect().then(() => {
+    const subscribe = async () => {
+      for await (const event of client.evt1$) {
+        expect(event).toEqual(1)
+        done()
+      }
     }
-    expect(true).toBe(false) // won't reach because observables never stop iterating
-  }
 
-  subscribe()
+    subscribe()
+  })
 })
 
-it('should proxy nested observables to the connector', async () => {
-  expect.assertions(1)
-
+it('should proxy nested observables to the connector', done => {
   const client = createClient({
     'nested.evt$': async function* () {
       yield 1
     },
   })
 
-  await client.connect()
-
-  const subscribe = async () => {
-    for await (const event of client.nested.evt$) {
-      expect(event).toEqual(1)
+  client.connect().then(() => {
+    const subscribe = async () => {
+      for await (const event of client.nested.evt$) {
+        expect(event).toEqual(1)
+        done()
+      }
     }
-    expect(true).toBe(false) // won't reach because observables never stop iterating
-  }
 
-  subscribe()
+    subscribe()
+  })
 })
 
-it('should handle multiple iterations of an observable', async () => {
-  expect.assertions(3)
+it('should handle multiple iterations of an observable', done => {
+  let assertions = 0
 
   const client = createClient({
     evt1$: async function* () {
@@ -174,15 +172,80 @@ it('should handle multiple iterations of an observable', async () => {
     },
   })
 
-  await client.connect()
+  client.connect().then(() => {
+    const subscribe = async () => {
+      for await (const value of client.evt1$) {
+        expect(value).toEqual(1)
 
-  const subscribe = async () => {
-    for await (const value of client.evt1$) {
-      expect(value).toEqual(1)
+        if (++assertions === 3) {
+          done()
+        }
+      }
     }
-  }
 
-  subscribe()
-  subscribe()
-  subscribe()
+    subscribe()
+    subscribe()
+    subscribe()
+  })
+})
+
+it('should handle multiple values from an observable', done => {
+  expect.assertions(3)
+
+  const client = createClient({
+    evt1$: async function* () {
+      yield 1
+      yield 2
+      yield 3
+    },
+  })
+
+  client.connect().then(() => {
+    const subscribe = async () => {
+      let iterations = 0
+
+      for await (const value of client.evt1$) {
+        expect(value).toEqual(++iterations)
+
+        if (iterations === 3) {
+          done()
+        }
+      }
+    }
+
+    subscribe()
+  })
+})
+
+it('should handle multiple iterations of and multiple values from an observable', done => {
+  let assertions = 0
+
+  const client = createClient({
+    evt1$: async function* () {
+      await wait(1)
+      yield 1
+      await wait(1)
+      yield 2
+      await wait(1)
+      yield 3
+    },
+  })
+
+  client.connect().then(() => {
+    const subscribe = async () => {
+      let iterations = 0
+
+      for await (const value of client.evt1$) {
+        expect(value).toEqual(++iterations)
+
+        if (++assertions === 9) {
+          done()
+        }
+      }
+    }
+
+    subscribe()
+    subscribe()
+    subscribe()
+  })
 })
