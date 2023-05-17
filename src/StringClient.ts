@@ -6,10 +6,10 @@ import type Data from './Data'
 import type RemoteObservableEvent from './RemoteObservableEvent'
 import AsyncIterableSubject from './lib/AsyncIterableSubject'
 import Deferred from './lib/Deferred'
+import { detectPlatform } from './lib/Platform'
 import assert from './lib/assert'
 import generateId from './lib/generateId'
 import isNonNull from './lib/isNonNull'
-import platform from './lib/platform'
 
 export type RemoteFunction<I, O> = (arg: I) => Promise<O>
 export type RemoteObservable<T> = AsyncIterable<T>
@@ -146,6 +146,8 @@ export default class StringClient<T extends RemoteInterface> implements Client {
     }
 
     assert(isNonNull(this._context), ErrorMessages.NOT_CONNECTED)
+
+    const platform = detectPlatform(this._context)
 
     if (platform === 'android') {
       const { default: AndroidConnector } = await import('./AndroidConnector')
